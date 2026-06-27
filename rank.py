@@ -2,22 +2,43 @@ import pickle
 import numpy as np
 import csv
 import time
+import argparse
 
 def generate_reasoning(meta):
-    """
-    Algorithmic reasoning generator that mimics human analysis.
-    Passes Stage 4 by utilizing highly specific candidate facts without static templates.
-    """
     skills_str = ", ".join(meta['skills'][:2]) if meta['skills'] else "core domain tools"
-    
-    if meta['exp'] > 5:
-        return f"Senior {meta['title']} with {meta['exp']} years of proven experience, specifically in {skills_str}. Demonstrates strong engagement with a {int(meta['resp_rate']*100)}% response rate, fitting the high-leverage product archetype."
-    elif meta['resp_rate'] > 0.7:
-        return f"Highly responsive {meta['title']} ({int(meta['resp_rate']*100)}% reply rate) bringing {meta['exp']} years of experience. Solid foundation in {skills_str} makes them a reliable operational fit."
-    else:
-        return f"Capable {meta['title']} offering {meta['exp']} years of background in {skills_str}. While response rates are moderate, their technical stack aligns directly with the core JD requirements."
 
+    title = meta['title'].strip()
+
+    # Avoid "Senior Senior ..."
+    if meta['exp'] > 5 and not title.lower().startswith("senior"):
+        title = "Senior " + title
+
+    if meta['exp'] > 5:
+        return (
+            f"{title} with {meta['exp']} years of proven experience, "
+            f"particularly in {skills_str}. Demonstrates strong recruiter engagement "
+            f"({int(meta['resp_rate']*100)}% response rate), making them a strong match for the role."
+        )
+
+    elif meta['resp_rate'] > 0.7:
+        return (
+            f"{title} with {meta['exp']} years of experience and a high recruiter response rate "
+            f"({int(meta['resp_rate']*100)}%). Skills in {skills_str} align well with the job requirements."
+        )
+
+    else:
+        return (
+            f"{title} with {meta['exp']} years of experience. Technical strengths in "
+            f"{skills_str} align with the role, though engagement signals are comparatively moderate."
+        )
+    
 def main():
+    # --- NEW: Accept the Hackathon's required arguments ---
+    parser = argparse.ArgumentParser(description="Redrob 1st-Place Ranker")
+    parser.add_argument("--candidates", type=str, required=True, help="Path to candidates.jsonl")
+    parser.add_argument("--out", type=str, required=True, help="Path for output CSV")
+    args = parser.parse_args()
+
     start_time = time.time()
     print("Loading artifacts (No Network, CPU Only)...")
     
@@ -35,26 +56,20 @@ def main():
     honeypots = artifacts['honeypot_flags']
     metadata = artifacts['metadata']
 
-    # 1. Lightning Fast Vector Math (Cosine Similarity)
     print("Executing dense matrix multiplication...")
     semantic_scores = np.dot(cand_matrix, jd_vec)
 
-    # 2. Apply Composite Formula & Honeypot Destroyer
     final_scores = semantic_scores * multipliers
-    
-    # Annihilate honeypots
     final_scores[honeypots] = 0.0
 
-    # 3. Deterministic Sorting
     print("Sorting deterministically...")
     scored_candidates = [
         (-float(final_scores[i]), c_ids[i]) for i in range(len(c_ids))
     ]
     scored_candidates.sort()
-
-    # 4. Extract Top 100 and Write to CSV
-    team_id = "asymmetric_inference" # Replace with your actual registered team ID
-    output_filename = f"{team_id}.csv"
+    
+    # --- NEW: Use the requested output filename ---
+    output_filename = args.out
     
     print(f"Writing exactly 100 rows to {output_filename}...")
     with open(output_filename, 'w', newline='', encoding='utf-8') as f:

@@ -8,7 +8,7 @@
 
 This repository contains our solution for the **Redrob AI Hackathon - Intelligent Candidate Discovery Challenge**.
 
-The objective is to identify the **Top 10 most relevant candidates** from a dataset of 100,000 profiles for a given Engineering Job Description while satisfying strict execution constraints:
+The objective is to identify the **Top 100 most relevant candidates** from a dataset of 100,000 profiles for a given Engineering Job Description while satisfying strict execution constraints:
 
 - CPU only
 - No internet access during evaluation
@@ -28,7 +28,7 @@ This phase is executed once before submission.
 
 Tasks performed:
 
-- Parse the Job Description (`JD.docx`)
+- Parse the Job Description (`job_description.docx`)
 - Parse candidate profiles (`candidates.jsonl`)
 - Extract semantic embeddings using a local SentenceTransformer model
 - Compute normalized candidate vectors
@@ -67,7 +67,7 @@ During evaluation:
 Average runtime:
 
 ```
-< 1 second
+Typically completes within a few seconds 
 ```
 
 on a modern CPU.
@@ -85,8 +85,8 @@ on a modern CPU.
 ├── README.md
 ├── artifacts.pkl
 ├── candidates.jsonl
-├── JD.docx
-└── submission.csv
+├── job_description.docx
+└── asymmetric_inference.csv
 ```
 
 ---
@@ -232,13 +232,13 @@ The SentenceTransformer model is downloaded only during this stage if not alread
 Run the ranking pipeline:
 
 ```bash
-python rank.py --candidates ./candidates.jsonl --out ./submission.csv
+python rank.py --candidates ./candidates.jsonl --out ./asymmetric_inference.csv
 ```
 
 Output:
 
 ```
-submission.csv
+asymmetric_inference.csv
 ```
 
 ---
@@ -265,7 +265,7 @@ The interface demonstrates:
 | Component | Runtime |
 |------------|----------|
 | Pre-computation | One-time offline step |
-| Ranking | Typically < 1 second |
+| Ranking | Typically completes within a few seconds (well under the 5-minute limit) |
 | Hardware | CPU only |
 | Internet | Not required |
 | Deterministic | Yes |
@@ -312,10 +312,10 @@ python precompute.py
 
 ## Step 2
 
-Generate submission:
+Generate the submission CSV:
 
 ```bash
-python rank.py --candidates ./candidates.jsonl --out ./submission.csv
+python rank.py --candidates ./candidates.jsonl --out ./asymmetric_inference.csv
 ```
 
 ---
@@ -325,9 +325,9 @@ python rank.py --candidates ./candidates.jsonl --out ./submission.csv
 The generated CSV contains:
 
 - candidate_id
-- score
 - rank
-- explanation
+- score
+- reasoning
 
 ordered by descending relevance.
 
