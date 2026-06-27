@@ -61,19 +61,36 @@ with open(CANDIDATES_FILE, 'r', encoding='utf-8') as f:
         # --- A. HONEYPOT DESTROYER HEURISTICS ---
         is_honeypot = False
         
+        # Rule 1: Chronological Paradox
         total_work_months = sum(h.get('duration_months', 0) for h in history)
         claimed_exp_months = prof.get('years_of_experience', 0) * 12
         if total_work_months > (claimed_exp_months + 24):
             is_honeypot = True
             
+        # Rule 2: Zero-Day Expert
         for s in skills:
             if s.get('proficiency') == 'expert' and s.get('duration_months', 0) == 0:
                 is_honeypot = True
                 break
                 
+        # Rule 3: The Ghost Profile
         if signals.get('recruiter_response_rate', 1.0) < 0.05 and signals.get('applications_submitted_30d', 1) == 0:
             is_honeypot = True
 
+        # Rule 4: The Exclusive Whitelist (Annihilates Keyword Stuffers)
+        title_lower = prof.get('current_title', '').lower()
+        
+        # If their title does NOT contain at least one of these, they are a trap.
+        valid_tech_terms = ['software', 'developer', 'ai ', ' ai', 'ml ', ' ml', 'machine learning', 'data', 'backend', 'frontend', 'full stack', 'scientist', 'research', 'nlp', 'search', 'recommendation']
+        
+        # If their title contains any of these, they are a trap (even if they squeezed 'engineer' in there).
+        fake_engineers = ['mechanical', 'civil', 'qa', 'support', 'sales', 'hr', 'marketing', 'accountant', 'designer', 'analyst', 'operations']
+        
+        has_valid_term = any(term in title_lower for term in valid_tech_terms)
+        has_fake_term = any(term in title_lower for term in fake_engineers)
+        
+        if not has_valid_term or has_fake_term:
+            is_honeypot = True
         # --- B. BEHAVIORAL MULTIPLIER SCORING ---
         resp_rate = signals.get('recruiter_response_rate', 0.5)
         int_completion = signals.get('interview_completion_rate', 0.5)
